@@ -25,17 +25,18 @@ nnoremap <unique> <silent> <Plug>(Alignment)  :<c-u>call <SID>Alignment("normal"
 let s:maxAlColLast = 0
 
 function! s:Alignment(mode, count)
+
 	let l:alMode = nr2char(getchar())
 
-	if (l:alMode ==# 's') || (l:alMode ==# 'e') 
-		let l:alStr = input("Please type the string/pattern(very no majic) for alignment: ")
-		if (l:alMode ==# 'e')
-			call s:ExecuteAlignment(a:mode, a:count, l:alStr, 'end')
-			return
-		endif
-	elseif (l:alMode ==# 'm')
+	if (l:alMode ==# 'm')
 		call s:ExecuteAlignment(a:mode, a:count)
 		return
+	elseif (l:alMode ==# 'e') 
+		let l:alStr = input("Please type the string/pattern(very no majic) for alignment after it: ")
+		call s:ExecuteAlignment(a:mode, a:count, l:alStr, 'end')
+		return
+	elseif (l:alMode ==# 's')
+		let l:alStr = input("Please type the string/pattern(very no majic) for alignment before it: ")
 	else
 		let l:alStr = l:alMode
 	endif
