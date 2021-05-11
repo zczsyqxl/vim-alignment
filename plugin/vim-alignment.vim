@@ -12,6 +12,8 @@ let g:loaded_vim_alignment = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+let g:vim_alignment_offset = get(g:, 'vim_alignment_offset', 1)
+
 if !hasmapto('<Plug>AlignmentViaChar')
 	map <unique> <leader>a <Plug>AlignmentViaChar
 endif
@@ -20,28 +22,18 @@ if !hasmapto('<Plug>AlignmentViaStr')
 	map <unique> <leader><leader>a <Plug>AlignmentViaStr
 endif
 
-if !hasmapto('<Plug>AlignmentViaStrEnd')
-	map <unique> <leader><leader>e <Plug>AlignmentViaStrEnd
-endif
-
 vnoremap <unique> <silent> <Plug>AlignmentViaChar  :<c-u>call <SID>Alignment("visual", v:count1)<cr>
 nnoremap <unique> <silent> <Plug>AlignmentViaChar  :<c-u>call <SID>Alignment("normal", v:count1)<cr>
 
 vnoremap <unique> <silent> <Plug>AlignmentViaStr  :<c-u>call <SID>Alignment("visual", v:count1, "str")<cr>
 nnoremap <unique> <silent> <Plug>AlignmentViaStr  :<c-u>call <SID>Alignment("normal", v:count1, "str")<cr>
 
-vnoremap <unique> <silent> <Plug>AlignmentViaStrEnd  :<c-u>call <SID>Alignment("visual", v:count1, "str", "end")<cr>
-nnoremap <unique> <silent> <Plug>AlignmentViaStrEnd  :<c-u>call <SID>Alignment("normal", v:count1, "str", "end")<cr>
 
 let s:maxAlColLast = 0
 
 function! s:Alignment(mode, count, ...)
 	if (a:0 ># 0) && (a:1 ==# 'str')
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment: ")
-		if (a:0 ># 1) && (a:2 ==# 'end')
-			call s:ExecuteAlignment(a:mode, a:count, l:alStr, a:2)
-			return
-		endif
 	else
 		let l:alStr = nr2char(getchar())
 		if (l:alStr ==# 'm')
@@ -121,12 +113,7 @@ function! s:CollectAlPos(...)
 		if l:matList[1] ==# -1
 			return 0
 		else
-			if (len(a:1) ==# 2) && (a:1[1] == 'end')
-				let l:pos = l:matList[2] + 1
-			else
-				let l:pos = l:matList[1] + 1
-			endif
-			execute "let s:alPos." . line('.') . "=" . virtcol([line('.'), l:pos])
+			execute "let s:alPos." . line('.') . "=" . virtcol([line('.'), l:matList[1]+1])
 		endif
 	endif
 
