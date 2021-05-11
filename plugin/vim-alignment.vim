@@ -89,9 +89,9 @@ function! s:CollectAlPos(...)
 				endif
 				if virtcol('.') ==# len(l:linestr)
 					if l:linestr[col('.')-1] ==# " "
-						let l:offset = 4
+						let l:offset = g:vim_alignment_offset
 					else
-						let l:offset = 5
+						let l:offset = g:vim_alignment_offset + 1
 					endif
 					if s:maxAlClo <  virtcol('.') + l:offset
 						let s:maxAlClo = virtcol('.') + l:offset
@@ -117,8 +117,8 @@ function! s:CollectAlPos(...)
 		endif
 	endif
 
-	if s:maxAlClo < s:alPos[line('.')] + 4
-		let s:maxAlClo = s:alPos[line('.')] + 4
+	if s:maxAlClo < s:alPos[line('.')] + g:vim_alignment_offset
+		let s:maxAlClo = s:alPos[line('.')] + g:vim_alignment_offset
 	endif
 endfunction
 
