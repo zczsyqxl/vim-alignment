@@ -33,12 +33,25 @@ function! s:Alignment(mode, count)
 		return
 	elseif (l:alMode ==# 'e') 
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment after it: ")
+
+		echom l:alStr
+		if (l:alStr ==# '')
+			return
+		endif
+
 		call s:ExecuteAlignment(a:mode, a:count, l:alStr, 'end')
 		return
 	elseif (l:alMode ==# 's')
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment before it: ")
+
+		if (l:alStr ==# '')
+			return
+		endif
 	else
 		let l:alStr = l:alMode
+		if (l:alStr ==# '')
+			return
+		endif
 	endif
 
 	call s:ExecuteAlignment(a:mode, a:count, l:alStr)
