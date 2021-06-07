@@ -34,7 +34,6 @@ function! s:Alignment(mode, count)
 	elseif (l:alMode ==# 'e') 
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment after it: ")
 
-		echom l:alStr
 		if (l:alStr ==# '')
 			return
 		endif
@@ -60,26 +59,26 @@ endfunction
 function! s:ExecuteAlignment(mode, count, ...)
 
 	let s:alPos = {}
-	let s:maxAlClo = 0
+	let s:maxAlCol = 0
 
 	if (a:mode ==# 'visual')
 		execute "'<,'>call s:CollectAlPos(" . string(a:000) . ")"
 
-		if (a:count ># s:maxAlClo)
-			let s:maxAlClo = a:count
+		if (a:count ># s:maxAlCol)
+			let s:maxAlCol = a:count
 		endif
-		let s:maxAlColLast = s:maxAlClo
+		let s:maxAlColLast = s:maxAlCol
 
 		execute "'<,'>call s:AlignmentLine(" . string(a:000) . ")"
 	else
 		call s:CollectAlPos(a:000)
 
-		if (a:count ># s:maxAlClo)
-			let s:maxAlClo = a:count
-		elseif (s:maxAlColLast ># s:maxAlClo)
-			let s:maxAlClo = s:maxAlColLast
+		if (a:count ># s:maxAlCol)
+			let s:maxAlCol = a:count
+		elseif (s:maxAlColLast ># s:maxAlCol)
+			let s:maxAlCol = s:maxAlColLast
 		else
-			let s:maxAlColLast = s:maxAlClo
+			let s:maxAlColLast = s:maxAlCol
 		endif
 
 		call s:AlignmentLine(a:000)
@@ -95,47 +94,64 @@ function! s:CollectAlPos(...)
 			if match(l:linestr, '\v^\s*\#\s*define\s+') ==# -1
 				return 
 			else
-				execute	"silent normal! 0fdwel"
-				if l:linestr[col('.')-1] ==# "("
-					execute	"silent normal! %l"
-				endif
-				if virtcol('.') ==# len(l:linestr)
-					if l:linestr[col('.')-1] ==# " "
-						let l:offset = g:vim_alignment_offset
-					else
-						let l:offset = g:vim_alignment_offset + 1
-					endif
-					if s:maxAlClo <  virtcol('.') + l:offset
-						let s:maxAlClo = virtcol('.') + l:offset
-					endif
+				let l:curPattern = '\V\^\s\*#define\s\+\w\+\(\s\+\|(\.\{-})\s\+\)\zs\S\+'
+				let l:pos = match(l:linestr, l:curPattern)
+				if(l:pos ==# -1)
 					return
 				endif
+				let l:prePattern = '\V\^\s\*#define\s\+\w\+\(\zs\s\+\|(\.\{-})\zs\s\+\)\S\+'
+				let l:maxPos = match(l:linestr, l:prePattern)
+				if(l:maxPos ==# -1)
+					return
+				endif
+				let l:maxPos = l:maxPos-1
 			endif
 		else
-			execute	"silent normal! $F\\"
-			if l:linestr[col('.')-2] != " "
-				execute	"silent normal! i "
+			let l:curPattern = '\V\^\.\*\zs\\\s\*\$'
+			let l:pos = match(l:linestr, l:curPattern)
+			if(l:pos ==# -1)
+				return
 			endif
-			execute	"silent normal! gel"
+			let l:prePattern = '\V\s\*\\\s\*\$'
+			let l:maxPos = match(l:linestr, l:prePattern)
+			if(l:maxPos ==# -1)
+				return
+			elseif(l:maxPos >=# 1)
+				let l:maxPos = l:maxPos-1
+			endif
 		endif
-		execute "let s:alPos." . line('.') . "=" . virtcol('.')
 	else
-		let l:matList = matchstrpos(l:linestr, '\V' . a:1[0] , 0)
-
+		let l:curPattern = '\V' . a:1[0]
+		let l:matList = matchstrpos(l:linestr, l:curPattern, 0)
 		if l:matList[1] ==# -1
 			return 0
 		else
 			if (len(a:1) ==# 2) && (a:1[1] == 'end')
-				let l:pos = l:matList[2] + 1
+				let l:maxPos = l:matList[2] - 1
+				let l:aftPattern = '\V' . a:1[0] . '\s\*\zs\S' 
+				let l:pos = match(l:linestr, l:aftPattern, 0)
+				if(l:pos ==# -1)
+					return
+				endif
 			else
-				let l:pos = l:matList[1] + 1
+				let l:pos = l:matList[1]
+				let l:prePattern = '\V\s\*' . a:1[0]
+				let l:maxPos = match(l:linestr, l:prePattern, 0)
+				if(l:maxPos ==# -1)
+					return
+				elseif(l:maxPos >=# 1)
+					let l:maxPos = l:maxPos-1
+				endif
 			endif
-			execute "let s:alPos." . line('.') . "=" . virtcol([line('.'), l:pos])
 		endif
 	endif
 
-	if s:maxAlClo < s:alPos[line('.')] + g:vim_alignment_offset
-		let s:maxAlClo = s:alPos[line('.')] + g:vim_alignment_offset
+	let l:col = virtcol([line('.'), l:pos]) + 1
+	let l:maxCol = virtcol([line('.'), l:maxPos]) + 1
+	execute "let s:alPos." . line('.') . "=" . l:col
+
+	if s:maxAlCol < l:maxCol + g:vim_alignment_offset
+		let s:maxAlCol = l:maxCol + g:vim_alignment_offset
 	endif
 endfunction
 
@@ -143,14 +159,14 @@ endfunction
 function! s:AlignmentLine(...)
 	if has_key(s:alPos, line('.'))
 
-		if (len(a:1) ==# 0)
-			execute "silent normal! " . s:alPos[line('.')] . "|dw"
-		else
-			execute "silent normal! " . s:alPos[line('.')] . "|"
+		execute "silent normal! " . s:alPos[line('.')] . "|"
+
+		if virtcol('.') ># s:maxAlCol
+			execute "silent normal! geldw"
 		endif
 
-		if virtcol('.') <# s:maxAlClo
-			let l:spacenu = s:maxAlClo - virtcol('.')
+		if virtcol('.') <=# s:maxAlCol
+			let l:spacenu = s:maxAlCol - virtcol('.') + 1
 			execute "silent normal! " . l:spacenu . "i \<esc>0"
 		endif
 	endif
