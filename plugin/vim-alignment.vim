@@ -18,6 +18,7 @@ endif
 
 let g:vim_alignment_offset = get(g:, 'vim_alignment_offset', 1)
 
+" mapping
 vnoremap <unique> <silent> <Plug>(Alignment)  :<c-u>call <SID>Alignment("visual", v:count1)<cr>
 nnoremap <unique> <silent> <Plug>(Alignment)  :<c-u>call <SID>Alignment("normal", v:count1)<cr>
 
@@ -29,34 +30,42 @@ function! s:Alignment(mode, count)
 	let l:alMode = nr2char(getchar())
 
 	if (l:alMode ==# 'm')
-		call s:ExecuteAlignment(a:mode, a:count)
+		let l:alMode = 'Macro'
+		call s:ExecuteAlignment(a:mode, a:count, l:alMode)
 		return
 	elseif (l:alMode ==# 'e') 
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment after it: ")
-
 		if (l:alStr ==# '')
 			return
 		endif
+		if (1 ==# strchars(l:alStr)) 
+			let l:alMode = 'AfterSingleChar'
+		else
+			let l:alMode = 'AfterPattern'
+		endif
 
-		call s:ExecuteAlignment(a:mode, a:count, l:alStr, 'end')
-		return
 	elseif (l:alMode ==# 's')
 		let l:alStr = input("Please type the string/pattern(very no majic) for alignment before it: ")
-
 		if (l:alStr ==# '')
 			return
+		endif
+		if (1 ==# strchars(l:alStr)) 
+			let l:alMode = 'FromSingleChar'
+		else
+			let l:alMode = 'FromPattern'
 		endif
 	else
 		let l:alStr = l:alMode
 		if (l:alStr ==# '')
 			return
 		endif
+		let l:alMode = 'FromSingleChar'
 	endif
 
-	call s:ExecuteAlignment(a:mode, a:count, l:alStr)
+	call s:ExecuteAlignment(a:mode, a:count, l:alMode, l:alStr ) 
 endfunction
 
-function! s:ExecuteAlignment(mode, count, ...)
+function! s:ExecuteAlignment(mode, ...)
 
 	let s:alPos = {}
 	let s:maxAlCol = 0
@@ -64,21 +73,26 @@ function! s:ExecuteAlignment(mode, count, ...)
 	if (a:mode ==# 'visual')
 		execute "'<,'>call s:CollectAlPos(" . string(a:000) . ")"
 
-		if (a:count ># s:maxAlCol)
-			let s:maxAlCol = a:count
+		if ('FromSingleChar' !=# a:2) && ('AfterSingleChar' !=# a:2)
+			if (a:1 ># s:maxAlCol)
+				let s:maxAlCol = a:1
+			endif
 		endif
+
 		let s:maxAlColLast = s:maxAlCol
 
 		execute "'<,'>call s:AlignmentLine(" . string(a:000) . ")"
 	else
 		call s:CollectAlPos(a:000)
 
-		if (a:count ># s:maxAlCol)
-			let s:maxAlCol = a:count
-		elseif (s:maxAlColLast ># s:maxAlCol)
-			let s:maxAlCol = s:maxAlColLast
-		else
-			let s:maxAlColLast = s:maxAlCol
+		if ('FromSingleChar' !=# a:2) && ('AfterSingleChar' !=# a:2)
+			if (a:1 ># s:maxAlCol)
+				let s:maxAlCol = a:1
+			elseif (s:maxAlColLast ># s:maxAlCol)
+				let s:maxAlCol = s:maxAlColLast
+			else
+				let s:maxAlColLast = s:maxAlCol
+			endif
 		endif
 
 		call s:AlignmentLine(a:000)
@@ -86,10 +100,10 @@ function! s:ExecuteAlignment(mode, count, ...)
 
 endfunction
 
-function! s:CollectAlPos(...)
+function! s:CollectAlPos(args)
 	let l:linestr = getline('.')
 
-	if (len(a:1)==# 0)
+	if ('Macro' ==# a:args[1])
 		if match(l:linestr, '\v\\\s*$') ==# -1
 			if match(l:linestr, '\v^\s*\#\s*define\s+') ==# -1
 				return 
@@ -120,43 +134,52 @@ function! s:CollectAlPos(...)
 				let l:maxPos = l:maxPos-1
 			endif
 		endif
-	else
-		let l:curPattern = '\V' . a:1[0]
-		let l:matList = matchstrpos(l:linestr, l:curPattern, 0)
-		if l:matList[1] ==# -1
-			return 0
-		else
-			if (len(a:1) ==# 2) && (a:1[1] == 'end')
-				let l:maxPos = l:matList[2] - 1
-				let l:aftPattern = '\V' . a:1[0] . '\s\*\zs\S' 
-				let l:pos = match(l:linestr, l:aftPattern, 0)
-				if(l:pos ==# -1)
-					return
-				endif
-			else
-				let l:pos = l:matList[1]
-				let l:prePattern = '\V\s\*' . a:1[0]
-				let l:maxPos = match(l:linestr, l:prePattern, 0)
-				if(l:maxPos ==# -1)
-					return
-				elseif(l:maxPos >=# 1)
-					let l:maxPos = l:maxPos-1
-				endif
-			endif
+	else 
+		if ('FromSingleChar' ==# a:args[1])
+			let l:posPattern = '\V\(\.\{-}\zs' . a:args[2] . '\)\{' . a:args[0] . '\}'
+			let l:maxPosPattern = '\V\(\.\{-}\S\zs\s\*' . a:args[2] . '\)\{' . a:args[0] . '}'
+		elseif ('AfterSingleChar' ==# a:args[1])
+			let l:posPattern = '\V\(\.\{-}' . a:args[2] . '\)\{' . a:args[0] . '}\s\*\zs\S'
+			let l:maxPosPattern = '\V\(\.\{-}' . a:args[2] . '\zs\)\{' . a:args[0] . '}'
+		elseif ('FromPattern' ==# a:args[1])
+			let l:posPattern = '\V' . a:args[2]
+			let l:temPos = match(l:linestr, l:posPattern, 0) + 1
+			let l:temCol = virtcol([line('.'), l:temPos])
+			let l:maxPosPattern = '\V\S\zs\s\*\%' . l:temCol . 'v'
+		elseif ('AfterPattern' ==# a:args[1])
+			let l:posPattern = '\V' . a:args[2] .'\s\*\zs\S'
+			let l:maxPosPattern = '\V' . a:args[2] . '\zs'
 		endif
+
+		let l:pos = match(l:linestr, l:posPattern, 0)
+
+		if(l:pos ==# -1)
+			return
+		endif
+
+		let l:maxPos = match(l:linestr, l:maxPosPattern, 0)
+
+		if(l:maxPos ==# -1)
+			return
+		elseif(l:maxPos >=# 1)
+			let l:maxPos = l:maxPos - 1
+		endif
+
 	endif
 
-	let l:col = virtcol([line('.'), l:pos]) + 1
-	let l:maxCol = virtcol([line('.'), l:maxPos]) + 1
+	let l:col = virtcol([line('.'), l:pos + 1])
+	let l:maxCol = virtcol([line('.'), l:maxPos + 1])
 	execute "let s:alPos." . line('.') . "=" . l:col
 
 	if s:maxAlCol < l:maxCol + g:vim_alignment_offset
 		let s:maxAlCol = l:maxCol + g:vim_alignment_offset
 	endif
+
 endfunction
 
 
-function! s:AlignmentLine(...)
+function! s:AlignmentLine(args)
+
 	if has_key(s:alPos, line('.'))
 
 		execute "silent normal! " . s:alPos[line('.')] . "|"
