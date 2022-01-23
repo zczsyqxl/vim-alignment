@@ -137,7 +137,7 @@ function! s:CollectAlPos(args)
 	else 
 		if ('FromSingleChar' ==# a:args[1])
 			let l:posPattern = '\V\(\.\{-}\zs' . a:args[2] . '\)\{' . a:args[0] . '\}'
-			let l:maxPosPattern = '\V\(\.\{-}\S\zs\s\*' . a:args[2] . '\)\{' . a:args[0] . '}'
+			let l:maxPosPattern = '\V\(\.\{-}\S\?\zs\s\*' . a:args[2] . '\)\{' . a:args[0] . '}'
 		elseif ('AfterSingleChar' ==# a:args[1])
 			let l:posPattern = '\V\(\.\{-}' . a:args[2] . '\)\{' . a:args[0] . '}\s\*\zs\S'
 			let l:maxPosPattern = '\V\(\.\{-}' . a:args[2] . '\zs\)\{' . a:args[0] . '}'
