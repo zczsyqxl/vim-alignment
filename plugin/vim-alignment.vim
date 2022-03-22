@@ -13,7 +13,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 if !hasmapto('<Plug>AlignmentViaChar')
-	map <unique> <leader>a <Plug>(Alignment)
+	map <unique> <leader>l <Plug>(Alignment)
 endif
 
 let g:vim_alignment_offset = get(g:, 'vim_alignment_offset', 1)
