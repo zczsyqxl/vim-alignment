@@ -1,0 +1,25 @@
+*vimalignment.txt* Plugin for alignment code
+*alignment* *vim-alignment*
+
+Author: Zhang, Yingqi <yingqi.zhang@163.com> 
+
+
+
+
+
+
+
+Version: 0.1
+==============================================================================
+CONTENTS                                                    *alignment-content*
+
+    01. Intro ............................................... |alignment-intro|
+    02. Configuration ...................................... |alignment-config|
+
+==============================================================================
+INTRODUCTION                                                  *alignment-intro*                                       
+==============================================================================
+FEATURES                                                     *alignment-config*
+
+
+modeline vim:tw=78:ts=8:ft=help:norl:

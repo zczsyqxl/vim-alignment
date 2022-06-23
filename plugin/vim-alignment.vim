@@ -12,7 +12,7 @@ let g:loaded_vim_alignment = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
-if !hasmapto('<Plug>AlignmentViaChar')
+if !hasmapto('<Plug>(Alignment)')
 	map <unique> <leader>l <Plug>(Alignment)
 endif
 
