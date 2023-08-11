@@ -108,12 +108,12 @@ function! s:CollectAlPos(args)
 			if match(l:linestr, '\v^\s*\#\s*define\s+') ==# -1
 				return 
 			else
-				let l:curPattern = '\V\^\s\*#define\s\+\w\+\(\s\+\|(\.\{-})\s\+\)\zs\S\+'
+				let l:curPattern = '\V\^\s\*#\s\*define\s\+\w\+\(\s\+\|(\.\{-})\s\+\)\zs\S\+'
 				let l:pos = match(l:linestr, l:curPattern)
 				if(l:pos ==# -1)
 					return
 				endif
-				let l:prePattern = '\V\^\s\*#define\s\+\w\+\(\zs\s\+\|(\.\{-})\zs\s\+\)\S\+'
+				let l:prePattern = '\V\^\s\*#\s\*define\s\+\w\+\(\zs\s\+\|(\.\{-})\zs\s\+\)\S\+'
 				let l:maxPos = match(l:linestr, l:prePattern)
 				if(l:maxPos ==# -1)
 					return
